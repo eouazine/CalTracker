@@ -1,0 +1,28 @@
+{
+  "name": "CalTracker - Suivi Calorique",
+  "short_name": "CalTracker",
+  "description": "Application de suivi des calories et protéines",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f141a",
+  "theme_color": "#49b36b",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle", "utilities"],
+  "lang": "fr",
+  "dir": "ltr"
+}

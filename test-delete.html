@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Suppression - CalTracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #0f1216; color: #e8edf5; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #49b36b; border-radius: 8px; }
+        .success { color: #49b36b; }
+        .error { color: #d45050; }
+        .info { color: #6fd6ff; }
+        button { padding: 10px 20px; margin: 5px; background: #49b36b; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2d7a46; }
+        pre { background: #151a21; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Suppression - CalTracker</h1>
+    
+    <div class="test-section">
+        <h2>📊 Test de la fonction deleteFood</h2>
+        <button onclick="testDeleteFunction()">Tester la fonction deleteFood</button>
+        <div id="deleteResult"></div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Configuration -->
+    <script src="config.js"></script>
+    <!-- Database -->
+    <script src="database.js"></script>
+    <!-- App -->
+    <script src="app-clean.js?v=5"></script>
+
+    <script>
+        function testDeleteFunction() {
+            const output = document.getElementById('deleteResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                // Vérifier si la fonction existe
+                if (typeof window.deleteFood === 'function') {
+                    output.innerHTML = `
+                        <div class="success">✅ Fonction deleteFood trouvée !</div>
+                        <pre>window.deleteFood = ${window.deleteFood.toString()}</pre>
+                    `;
+                } else {
+                    output.innerHTML = '<div class="error">❌ Fonction deleteFood non trouvée</div>';
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testDeleteFunction();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

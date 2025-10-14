@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple - CalTracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #0f1216; color: #e8edf5; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #49b36b; border-radius: 8px; }
+        .success { color: #49b36b; }
+        .error { color: #d45050; }
+        .info { color: #6fd6ff; }
+        button { padding: 10px 20px; margin: 5px; background: #49b36b; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2d7a46; }
+        pre { background: #151a21; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple - CalTracker</h1>
+    
+    <div class="test-section">
+        <h2>📊 Test de connexion BDD</h2>
+        <button onclick="testConnection()">Tester la connexion</button>
+        <div id="connectionResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧮 Test de calcul</h2>
+        <button onclick="testCalculation()">Tester le calcul (goal - consumed)</button>
+        <div id="calculationResult"></div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Configuration -->
+    <script src="config.js"></script>
+    <!-- Database -->
+    <script src="database.js"></script>
+    <!-- App -->
+    <script src="app.js"></script>
+
+    <script>
+        async function testConnection() {
+            const output = document.getElementById('connectionResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                // Attendre que la BDD soit prête
+                let attempts = 0;
+                while (typeof window.calTrackerDB === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof window.calTrackerDB === 'undefined') {
+                    throw new Error('Base de données non disponible');
+                }
+                
+                if (!window.calTrackerDB.isInitialized) {
+                    throw new Error('Base de données non initialisée');
+                }
+                
+                // Tester la récupération des données
+                const data = await window.calTrackerDB.getGoalsAndConsumed();
+                
+                output.innerHTML = `
+                    <div class="success">✅ Connexion réussie !</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testCalculation() {
+            const output = document.getElementById('calculationResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                // Récupérer les données
+                const data = await window.calTrackerDB.getGoalsAndConsumed();
+                
+                // Calculer
+                const caloriesRemaining = data.caloriesGoal - data.caloriesConsumed;
+                const proteinsRemaining = data.proteinsGoal - data.proteinsConsumed;
+                
+                output.innerHTML = `
+                    <div class="success">✅ Calcul réussi !</div>
+                    <div class="info">
+                        <strong>Calories:</strong> ${data.caloriesGoal} - ${data.caloriesConsumed} = ${caloriesRemaining}<br>
+                        <strong>Protéines:</strong> ${data.proteinsGoal} - ${data.proteinsConsumed} = ${proteinsRemaining}
+                    </div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
