@@ -2,12 +2,12 @@
   "name": "CalTracker - Suivi Calorique",
   "short_name": "CalTracker",
   "description": "Application de suivi des calories et protéines",
-  "start_url": "/",
+  "start_url": "https://eouazine.github.io/caltracker/",
   "display": "standalone",
   "background_color": "#0f141a",
   "theme_color": "#49b36b",
   "orientation": "portrait",
-  "scope": "/",
+  "scope": "https://eouazine.github.io/caltracker/",
   "icons": [
     {
       "src": "icon-192.png",
