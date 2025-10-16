@@ -15,12 +15,11 @@
     <meta name="msapplication-tap-highlight" content="no" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="manifest.json?v=21" />
     
     <!-- PWA Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="icon" href="icon.jpg?v=21" />
+    <link rel="apple-touch-icon" href="icon.jpg?v=21" />
     
     <style>
       /* CSS complet intégré pour éviter les problèmes de chargement */
@@ -694,7 +693,7 @@
       /* Remove number spinners */
       input[type="number"]::-webkit-outer-spin-button,
       input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-      input[type="number"] { -moz-appearance: textfield; }
+      input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
       .hint { color: var(--muted); margin-top: 6px; }
 
@@ -1376,7 +1375,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js', { scope: './' })
+          navigator.serviceWorker.register('./sw.js?v=21')
             .then((registration) => {
               console.log('✅ Service Worker enregistré avec succès:', registration.scope);
               
@@ -1441,11 +1440,11 @@
     <!-- BarcodeDetector API native + fallback ZXing -->
     <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
     <!-- Configuration -->
-    <script src="config.js"></script>
+    <script src="config.js?v=21"></script>
     <!-- Database -->
-    <script src="database.js"></script>
+    <script src="database.js?v=21"></script>
     <!-- App -->
-    <script src="app-clean.js?v=20"></script>
+    <script src="app-clean.js?v=21"></script>
   </body>
   </html>
 

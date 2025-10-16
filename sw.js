@@ -1,5 +1,14 @@
-const CACHE_NAME = 'caltracker-v4';
-const BASE_PATH = '/CalTracker/';
+const CACHE_NAME = 'caltracker-v5';
+// Détermine automatiquement le sous-chemin (ex: /user/CalTracker/ sur GitHub Pages)
+const BASE_PATH = (() => {
+  try {
+    const swScope = new URL(self.registration.scope);
+    // Le scope se termine par un slash et pointe vers le dossier du site
+    return swScope.pathname.endsWith('/') ? swScope.pathname : swScope.pathname + '/';
+  } catch {
+    return '/';
+  }
+})();
 
 // Liste des fichiers à mettre en cache.
 // Tous les chemins sont préfixés par BASE_PATH.
@@ -10,7 +19,8 @@ const urlsToCache = [
   `${BASE_PATH}database.js`,
   `${BASE_PATH}config.js`,
   `${BASE_PATH}manifest.json`,
-  `${BASE_PATH}404.html`
+  `${BASE_PATH}404.html`,
+  `${BASE_PATH}icon.jpg`
 ];
 
 // Installation du service worker
