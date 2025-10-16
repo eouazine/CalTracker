@@ -1,10 +1,12 @@
-const CACHE_NAME = 'caltracker-v1';
+const CACHE_NAME = 'caltracker-v2';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json'
+  '/app-clean.js',
+  '/database.js',
+  '/config.js',
+  '/manifest.json',
+  '/404.html'
 ];
 
 // Installation du service worker
@@ -36,6 +38,11 @@ self.addEventListener('activate', (event) => {
 
 // Interception des requêtes
 self.addEventListener('fetch', (event) => {
+  // Ignorer les requêtes non-GET
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -43,9 +50,31 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
+        
         // Sinon, faire la requête réseau
-        return fetch(event.request);
-      }
-    )
+        return fetch(event.request)
+          .then((response) => {
+            // Vérifier si la réponse est valide
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            
+            // Cloner la réponse pour la mettre en cache
+            const responseToCache = response.clone();
+            
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            
+            return response;
+          })
+          .catch(() => {
+            // En cas d'erreur réseau, retourner index.html pour les routes SPA
+            if (event.request.destination === 'document') {
+              return caches.match('/index.html');
+            }
+          });
+      })
   );
 });

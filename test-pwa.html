@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PWA - CalTracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #0f1216; color: #e8edf5; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #49b36b; border-radius: 8px; }
+        .success { color: #49b36b; }
+        .error { color: #d45050; }
+        .info { color: #6fd6ff; }
+        button { padding: 10px 20px; margin: 5px; background: #49b36b; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2d7a46; }
+        pre { background: #151a21; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test PWA - CalTracker</h1>
+    
+    <div class="test-section">
+        <h2>📱 Test Service Worker</h2>
+        <button onclick="testServiceWorker()">Tester le Service Worker</button>
+        <div id="swResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Test Manifest</h2>
+        <button onclick="testManifest()">Tester le Manifest</button>
+        <div id="manifestResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔗 Test Installation PWA</h2>
+        <button onclick="testPWAInstall()">Tester l'installation PWA</button>
+        <div id="pwaResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Test Cache</h2>
+        <button onclick="testCache()">Tester le Cache</button>
+        <div id="cacheResult"></div>
+    </div>
+
+    <script>
+        async function testServiceWorker() {
+            const output = document.getElementById('swResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        output.innerHTML = `
+                            <div class="success">✅ Service Worker actif</div>
+                            <pre>${JSON.stringify({
+                                scope: registration.scope,
+                                state: registration.active?.state,
+                                scriptURL: registration.active?.scriptURL
+                            }, null, 2)}</pre>
+                        `;
+                    } else {
+                        output.innerHTML = '<div class="error">❌ Aucun Service Worker trouvé</div>';
+                    }
+                } else {
+                    output.innerHTML = '<div class="error">❌ Service Worker non supporté</div>';
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testManifest() {
+            const output = document.getElementById('manifestResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                const response = await fetch('/manifest.json');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    output.innerHTML = `
+                        <div class="success">✅ Manifest valide</div>
+                        <pre>${JSON.stringify(manifest, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML = '<div class="error">❌ Manifest non trouvé</div>';
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testPWAInstall() {
+            const output = document.getElementById('pwaResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        output.innerHTML = `
+                            <div class="success">✅ PWA prête à être installée</div>
+                            <div class="info">
+                                <p>Pour installer sur iPhone :</p>
+                                <ol>
+                                    <li>Ouvrir dans Safari</li>
+                                    <li>Appuyer sur le bouton Partager (📤)</li>
+                                    <li>Sélectionner "Sur l'écran d'accueil"</li>
+                                </ol>
+                            </div>
+                        `;
+                    } else {
+                        output.innerHTML = '<div class="error">❌ Service Worker requis pour PWA</div>';
+                    }
+                } else {
+                    output.innerHTML = '<div class="error">❌ PWA non supportée sur ce navigateur</div>';
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testCache() {
+            const output = document.getElementById('cacheResult');
+            output.innerHTML = '<div class="info">🔄 Test en cours...</div>';
+            
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    const cacheResults = {};
+                    
+                    for (const cacheName of cacheNames) {
+                        const cache = await caches.open(cacheName);
+                        const keys = await cache.keys();
+                        cacheResults[cacheName] = keys.map(req => req.url);
+                    }
+                    
+                    output.innerHTML = `
+                        <div class="success">✅ Cache disponible</div>
+                        <pre>${JSON.stringify(cacheResults, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML = '<div class="error">❌ Cache API non supporté</div>';
+                }
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Tests automatiques au chargement
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testServiceWorker();
+                testManifest();
+                testPWAInstall();
+                testCache();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
