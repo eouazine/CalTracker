@@ -148,11 +148,12 @@
    let allFoods = [];
    let filteredFoods = [];
    
-   // Variables globales pour le drag & drop
+  // Variables globales pour le drag & drop
    let draggedFood = null;
    let targetMealType = null;
   const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   let touchDragState = { active: false, startX: 0, startY: 0, food: null, currentCell: null, started: false };
+  let hoveredDropCell = null;
 
    // Afficher la liste des aliments
    function renderFoodsList(foods) {
@@ -342,14 +343,12 @@
       btn.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
     });
 
-     // Événements pour les zones de planning (drop)
-     const planningCells = document.querySelectorAll('.planning-cell');
-     planningCells.forEach(cell => {
-       cell.addEventListener('dragover', handleDragOver);
-       cell.addEventListener('drop', handleDrop);
-       cell.addEventListener('dragenter', handleDragEnter);
-       cell.addEventListener('dragleave', handleDragLeave);
-     });
+    // Événements container pour un drop fiable sur toute la surface
+    const planningRow = document.querySelector('.planning-row');
+    if (planningRow) {
+      planningRow.addEventListener('dragover', handleContainerDragOver);
+      planningRow.addEventListener('drop', handleContainerDrop);
+    }
    }
 
    // Gestion du début du drag
@@ -374,40 +373,53 @@
      document.querySelectorAll('.planning-cell').forEach(cell => {
        cell.classList.remove('drop-target');
      });
+    hoveredDropCell = null;
    }
 
    // Gestion du survol pendant le drag
-   function handleDragOver(e) {
-     e.preventDefault();
+  function handleDragOver(e) {
+    e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-   }
+  }
 
    // Gestion de l'entrée dans une zone de drop
   function handleDragEnter(e) {
-    e.preventDefault();
-    const cell = e.currentTarget;
-    if (draggedFood && cell && cell.classList.contains('planning-cell')) {
-      cell.classList.add('drop-target');
-      targetMealType = cell.dataset.slot;
-      console.log('🎯 Zone de drop:', targetMealType);
-    }
+    // Géré par le container; laissé pour compat mais sans effet
   }
 
    // Gestion de la sortie d'une zone de drop
   function handleDragLeave(e) {
-    const cell = e.currentTarget;
-    if (cell && cell.classList.contains('planning-cell')) {
-      cell.classList.remove('drop-target');
-    }
+    // Géré par le container; laissé pour compat mais sans effet
   }
 
    // Gestion du drop
   function handleDrop(e) {
+    // Géré par le container; laissé pour compat mais sans effet
+  }
+
+  // Gestion dragover/drop au niveau du container pour couvrir toute la case
+  function handleContainerDragOver(e) {
     e.preventDefault();
-    const cell = e.currentTarget;
-    if (cell) cell.classList.remove('drop-target');
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el ? el.closest('.planning-cell') : null;
+    if (cell !== hoveredDropCell) {
+      if (hoveredDropCell) hoveredDropCell.classList.remove('drop-target');
+      if (cell) {
+        cell.classList.add('drop-target');
+        targetMealType = cell.dataset.slot;
+      }
+      hoveredDropCell = cell;
+    }
+  }
+
+  function handleContainerDrop(e) {
+    e.preventDefault();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el ? el.closest('.planning-cell') : null;
+    if (hoveredDropCell) hoveredDropCell.classList.remove('drop-target');
+    hoveredDropCell = null;
     const mealType = cell?.dataset?.slot || targetMealType;
-    
     if (draggedFood && mealType) {
       console.log('🎯 Drop effectué:', draggedFood.name, 'dans', mealType);
       openQuantityModal(draggedFood, mealType);
