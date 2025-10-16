@@ -1372,17 +1372,67 @@
 
     <button id="fabAdd" class="fab" aria-label="Ajouter un aliment">+</button>
 
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration - OPTIMISÉ POUR IPHONE -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js')
+          navigator.serviceWorker.register('./sw.js', { scope: './' })
             .then((registration) => {
-              console.log('Service Worker enregistré avec succès:', registration.scope);
+              console.log('✅ Service Worker enregistré avec succès:', registration.scope);
+              
+              // Gestion des mises à jour pour iPhone
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🔄 Nouveau Service Worker disponible');
+                    // Forcer l'activation
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                });
+              });
+              
+              // Vérifier si c'est un iPhone
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              if (isIOS) {
+                console.log('📱 Détection iPhone - Optimisations PWA activées');
+                
+                // Forcer le rechargement du cache
+                if ('caches' in window) {
+                  caches.keys().then(cacheNames => {
+                    cacheNames.forEach(cacheName => {
+                      if (cacheName.startsWith('caltracker-')) {
+                        caches.delete(cacheName);
+                        console.log('🗑️ Cache iPhone nettoyé:', cacheName);
+                      }
+                    });
+                  });
+                }
+              }
             })
             .catch((error) => {
-              console.log('Échec de l\'enregistrement du Service Worker:', error);
+              console.error('❌ Échec Service Worker:', error);
+              
+              // Fallback pour iPhone en cas d'erreur
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+              if (isIOS) {
+                console.log('📱 Mode fallback iPhone activé');
+                // Recharger la page après 2 secondes
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
             });
+        });
+        
+        // Gestion des erreurs de navigation PWA
+        window.addEventListener('error', (event) => {
+          if (event.target.tagName === 'IMG' || event.target.tagName === 'SCRIPT') {
+            console.log('🔄 Ressource manquante, rechargement...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
         });
       }
     </script>
