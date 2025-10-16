@@ -151,6 +151,8 @@
    // Variables globales pour le drag & drop
    let draggedFood = null;
    let targetMealType = null;
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  let touchDragState = { active: false, startX: 0, startY: 0, food: null, currentCell: null, started: false };
 
    // Afficher la liste des aliments
    function renderFoodsList(foods) {
@@ -321,9 +323,24 @@
      // Événements pour les aliments (drag)
      const foodItems = document.querySelectorAll('.search-item[draggable="true"]');
      foodItems.forEach(item => {
-       item.addEventListener('dragstart', handleDragStart);
-       item.addEventListener('dragend', handleDragEnd);
+      item.addEventListener('dragstart', handleDragStart);
+      item.addEventListener('dragend', handleDragEnd);
+      // Fallback tactile (iOS ne supporte pas le DnD HTML5)
+      if (isTouchDevice) {
+        item.addEventListener('touchstart', handleTouchStart, { passive: true });
+        item.addEventListener('touchmove', handleTouchMove, { passive: false });
+        item.addEventListener('touchend', handleTouchEnd);
+        item.addEventListener('touchcancel', handleTouchCancel);
+      }
      });
+
+    // Empêcher le drag via les boutons d'action
+    document.querySelectorAll('.search-edit, .search-remove').forEach(btn => {
+      btn.setAttribute('draggable', 'false');
+      btn.addEventListener('dragstart', (e) => e.preventDefault());
+      btn.addEventListener('mousedown', (e) => e.stopPropagation());
+      btn.addEventListener('touchstart', (e) => { e.stopPropagation(); }, { passive: true });
+    });
 
      // Événements pour les zones de planning (drop)
      const planningCells = document.querySelectorAll('.planning-cell');
@@ -336,15 +353,20 @@
    }
 
    // Gestion du début du drag
-   function handleDragStart(e) {
-     draggedFood = allFoods.find(food => food.id === e.target.dataset.foodId);
-     e.target.style.opacity = '0.5';
-     console.log('🔄 Début du drag:', draggedFood?.name);
-   }
+  function handleDragStart(e) {
+    const item = e.currentTarget;
+    draggedFood = allFoods.find(food => food.id === item.dataset.foodId);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'copy';
+      try { e.dataTransfer.setData('text/plain', item.dataset.foodId || ''); } catch {}
+    }
+    item.style.opacity = '0.5';
+    console.log('🔄 Début du drag:', draggedFood?.name);
+  }
 
    // Gestion de la fin du drag
-   function handleDragEnd(e) {
-     e.target.style.opacity = '1';
+  function handleDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
      draggedFood = null;
      targetMealType = null;
      
@@ -357,33 +379,99 @@
    // Gestion du survol pendant le drag
    function handleDragOver(e) {
      e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
    }
 
    // Gestion de l'entrée dans une zone de drop
-   function handleDragEnter(e) {
-     e.preventDefault();
-     if (draggedFood) {
-       e.target.classList.add('drop-target');
-       targetMealType = e.target.dataset.slot;
-       console.log('🎯 Zone de drop:', targetMealType);
-     }
-   }
+  function handleDragEnter(e) {
+    e.preventDefault();
+    const cell = e.currentTarget;
+    if (draggedFood && cell && cell.classList.contains('planning-cell')) {
+      cell.classList.add('drop-target');
+      targetMealType = cell.dataset.slot;
+      console.log('🎯 Zone de drop:', targetMealType);
+    }
+  }
 
    // Gestion de la sortie d'une zone de drop
-   function handleDragLeave(e) {
-     e.target.classList.remove('drop-target');
-   }
+  function handleDragLeave(e) {
+    const cell = e.currentTarget;
+    if (cell && cell.classList.contains('planning-cell')) {
+      cell.classList.remove('drop-target');
+    }
+  }
 
    // Gestion du drop
-   function handleDrop(e) {
-     e.preventDefault();
-     e.target.classList.remove('drop-target');
-     
-     if (draggedFood && targetMealType) {
-       console.log('🎯 Drop effectué:', draggedFood.name, 'dans', targetMealType);
-       openQuantityModal(draggedFood, targetMealType);
-     }
-   }
+  function handleDrop(e) {
+    e.preventDefault();
+    const cell = e.currentTarget;
+    if (cell) cell.classList.remove('drop-target');
+    const mealType = cell?.dataset?.slot || targetMealType;
+    
+    if (draggedFood && mealType) {
+      console.log('🎯 Drop effectué:', draggedFood.name, 'dans', mealType);
+      openQuantityModal(draggedFood, mealType);
+    }
+  }
+
+  // ===== Fallback tactile (iOS) =====
+  function handleTouchStart(e) {
+    const item = e.currentTarget;
+    const touch = e.touches[0];
+    touchDragState.active = true;
+    touchDragState.started = false;
+    touchDragState.startX = touch.clientX;
+    touchDragState.startY = touch.clientY;
+    touchDragState.food = allFoods.find(f => f.id === item.dataset.foodId);
+    touchDragState.currentCell = null;
+  }
+
+  function handleTouchMove(e) {
+    if (!touchDragState.active) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchDragState.startX);
+    const dy = Math.abs(touch.clientY - touchDragState.startY);
+    const moved = dx + dy;
+    if (moved > 8) {
+      // Empêcher le scroll une fois le drag commencé
+      e.preventDefault();
+      touchDragState.started = true;
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const cell = el ? el.closest('.planning-cell') : null;
+      if (cell !== touchDragState.currentCell) {
+        if (touchDragState.currentCell) {
+          touchDragState.currentCell.classList.remove('drop-target');
+        }
+        if (cell) {
+          cell.classList.add('drop-target');
+        }
+        touchDragState.currentCell = cell;
+      }
+    }
+  }
+
+  function handleTouchEnd() {
+    if (!touchDragState.active) return;
+    const cell = touchDragState.currentCell;
+    const food = touchDragState.food;
+    if (cell) cell.classList.remove('drop-target');
+    const mealType = cell ? cell.dataset.slot : null;
+    touchDragState.active = false;
+    touchDragState.currentCell = null;
+    touchDragState.food = null;
+    if (food && mealType) {
+      openQuantityModal(food, mealType);
+    }
+  }
+
+  function handleTouchCancel() {
+    if (touchDragState.currentCell) {
+      touchDragState.currentCell.classList.remove('drop-target');
+    }
+    touchDragState.active = false;
+    touchDragState.currentCell = null;
+    touchDragState.food = null;
+  }
 
    // Ouvrir la popup de quantité (version directe sans appel BDD)
    function openQuantityModalDirect(food, mealType, planningId = null, currentQuantity = null) {
