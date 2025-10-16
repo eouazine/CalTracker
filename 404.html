@@ -15,11 +15,11 @@
     <meta name="msapplication-tap-highlight" content="no" />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json?v=21" />
+    <link rel="manifest" href="manifest.json?v=22" />
     
     <!-- PWA Icons -->
-    <link rel="icon" href="icon.jpg?v=21" />
-    <link rel="apple-touch-icon" href="icon.jpg?v=21" />
+    <link rel="icon" href="icon.jpg?v=22" />
+    <link rel="apple-touch-icon" href="icon.jpg?v=22" />
     
     <style>
       /* CSS complet intégré pour éviter les problèmes de chargement */
@@ -1375,7 +1375,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js?v=21')
+          navigator.serviceWorker.register('./sw.js?v=22')
             .then((registration) => {
               console.log('Service Worker enregistré avec succès:', registration.scope);
             })
@@ -1390,11 +1390,11 @@
     <!-- BarcodeDetector API native + fallback ZXing -->
     <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
     <!-- Configuration -->
-    <script src="config.js?v=21"></script>
+    <script src="config.js?v=22"></script>
     <!-- Database -->
-    <script src="database.js?v=21"></script>
+    <script src="database.js?v=22"></script>
     <!-- App -->
-    <script src="app-clean.js?v=21"></script>
+    <script src="app-clean.js?v=22"></script>
   </body>
   </html>
 
