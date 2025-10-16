@@ -1,110 +1,83 @@
 const CACHE_NAME = 'caltracker-v3';
+const BASE_PATH = '/CalTracker/';
+
+// Liste des fichiers à mettre en cache.
+// Tous les chemins sont préfixés par BASE_PATH.
 const urlsToCache = [
-  './',
-  './index.html',
-  './app-clean.js',
-  './database.js',
-  './config.js',
-  './manifest.json',
-  './404.html'
+  `${BASE_PATH}`,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}app-clean.js`,
+  `${BASE_PATH}database.js`,
+  `${BASE_PATH}config.js`,
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}404.html`
 ];
 
-// Installation du service worker
+// Installation du service worker
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installation');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Cache ouvert');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.log('Service Worker: Erreur installation', error);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
-  // Force l'activation immédiate
+  // Activation immédiate
   self.skipWaiting();
 });
 
-// Activation du service worker
+// Activation du service worker
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activation');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Suppression ancien cache', cacheName);
             return caches.delete(cacheName);
           }
         })
-      );
-    }).then(() => {
-      // Prendre le contrôle immédiatement
-      return self.clients.claim();
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Interception des requêtes
+self.addEventListener('fetch', (event) => {
+  // Ignorer les requêtes non-GET ou externes
+  if (event.request.method !== 'GET' ||
+      !event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      if (response) {
+        return response;
+      }
+      // Si pas dans le cache, faire la requête réseau
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return response;
+      }).catch(() => {
+        // Fallback vers la page principale en cas d’erreur réseau
+        if (event.request.destination === 'document') {
+          return caches.match(`${BASE_PATH}index.html`);
+        }
+        // Sinon, chercher dans le cache
+        return caches.match(event.request);
+      });
+    }).catch(() => {
+      // Dernier recours : page principale ou message d’erreur
+      if (event.request.destination === 'document') {
+        return caches.match(`${BASE_PATH}index.html`);
+      }
+      return new Response('Erreur de chargement', { status: 404 });
     })
   );
 });
 
-// Interception des requêtes - SOLUTION ROBUSTE POUR IPHONE
-self.addEventListener('fetch', (event) => {
-  // Ignorer les requêtes non-GET et les requêtes externes
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Si trouvé dans le cache, retourner
-        if (response) {
-          console.log('Service Worker: Cache hit', event.request.url);
-          return response;
-        }
-        
-        // Sinon, faire la requête réseau
-        return fetch(event.request)
-          .then((response) => {
-            // Vérifier si la réponse est valide
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // Cloner la réponse pour la mettre en cache
-            const responseToCache = response.clone();
-            
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-            
-            return response;
-          })
-          .catch((error) => {
-            console.log('Service Worker: Erreur réseau', event.request.url, error);
-            
-            // SOLUTION CRITIQUE POUR IPHONE : Fallback vers index.html
-            if (event.request.destination === 'document') {
-              console.log('Service Worker: Fallback vers index.html');
-              return caches.match('./index.html');
-            }
-            
-            // Pour les autres ressources, essayer de les trouver dans le cache
-            return caches.match(event.request);
-          });
-      })
-      .catch((error) => {
-        console.log('Service Worker: Erreur générale', error);
-        // Dernier recours : index.html
-        if (event.request.destination === 'document') {
-          return caches.match('./index.html');
-        }
-        return new Response('Erreur de chargement', { status: 404 });
-      })
-  );
-});
-
-// Gestion des messages (pour debug)
+// Gestion de messages (facultatif)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
