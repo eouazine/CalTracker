@@ -1,4 +1,4 @@
-const CACHE_NAME = 'caltracker-v3';
+const CACHE_NAME = 'caltracker-v4';
 const BASE_PATH = '/CalTracker/';
 
 // Liste des fichiers à mettre en cache.
