@@ -1,4 +1,4 @@
-const CACHE_NAME = 'caltracker-v6';
+const CACHE_NAME = 'caltracker-v7';
 // Détermine automatiquement le sous-chemin (ex: /user/CalTracker/ sur GitHub Pages)
 const BASE_PATH = (() => {
   try {
